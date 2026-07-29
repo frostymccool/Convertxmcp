@@ -20,10 +20,12 @@ services:
     tmpfs:
       - /app/data
     healthcheck:
+      # The ConvertX image is debian-slim and ships curl, not wget. `/healthcheck`
+      # is declared `auth: false` upstream, so it answers without a session.
       test:
         - CMD
-        - wget
-        - -qO-
+        - curl
+        - -fsS
         - http://127.0.0.1:3000/healthcheck
       interval: 5s
       timeout: 3s
