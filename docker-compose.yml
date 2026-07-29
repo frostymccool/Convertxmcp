@@ -1,0 +1,62 @@
+# Runs the MCP server alongside a ConvertX instance on a single Proxmox VM.
+#
+# ConvertX is used exactly as published — no image rebuild, no patches. If you
+# already run ConvertX elsewhere, delete that service and point
+# CONVERTX_BASE_URL at your existing instance.
+
+services:
+  convertx:
+    image: ghcr.io/c4illin/convertx:latest
+    container_name: convertx
+    restart: unless-stopped
+    environment:
+      # Required for a plain-HTTP LAN deployment: without it ConvertX marks its
+      # session cookie Secure and no HTTP client can hold a session.
+      HTTP_ALLOWED: "true"
+      # Leave registration on only long enough to create the first account,
+      # then set it back to false and restart.
+      ACCOUNT_REGISTRATION: "false"
+      # ConvertX reads JWT_SECRET from the environment only — it has no _FILE
+      # variant. Left unset it generates a fresh secret on every boot, which
+      # silently logs this server out after each restart.
+      JWT_SECRET: ${CONVERTX_JWT_SECRET:?set CONVERTX_JWT_SECRET in .env}
+      AUTO_DELETE_EVERY_N_HOURS: "24"
+    volumes:
+      - convertx-data:/app/data
+    ports:
+      # Bound to localhost: only the MCP server needs to reach ConvertX directly.
+      - "127.0.0.1:3000:3000"
+
+  convertx-mcp:
+    build: .
+    image: convertx-mcp-server:latest
+    container_name: convertx-mcp
+    restart: unless-stopped
+    depends_on:
+      - convertx
+    environment:
+      CONVERTX_BASE_URL: http://convertx:3000
+      CONVERTX_EMAIL: ${CONVERTX_EMAIL:?set CONVERTX_EMAIL in .env}
+      CONVERTX_PASSWORD_FILE: /run/secrets/convertx_password
+      CONVERTX_ALLOWED_INPUT_DIRS: /data/input
+      CONVERTX_OUTPUT_DIR: /data/output
+      CONVERTX_CONVERT_TIMEOUT_MS: "600000"
+      MCP_TRANSPORT: http
+      MCP_HTTP_HOST: 0.0.0.0
+      MCP_HTTP_PORT: "8080"
+    volumes:
+      - ./data/input:/data/input:ro
+      - ./data/output:/data/output
+    secrets:
+      - convertx_password
+    ports:
+      # Reachable from the rest of the house. This server has no auth of its
+      # own — keep it on the LAN, behind the firewall.
+      - "8080:8080"
+
+secrets:
+  convertx_password:
+    file: ./secrets/convertx_password
+
+volumes:
+  convertx-data:

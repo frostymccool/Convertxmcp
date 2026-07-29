@@ -1,0 +1,11 @@
+node_modules/
+dist/
+coverage/
+*.log
+
+# Never commit real credentials; .env.example is the template that is tracked.
+.env
+.env.*
+!.env.example
+secrets/
+data/
