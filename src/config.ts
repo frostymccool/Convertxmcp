@@ -17,7 +17,7 @@ const integer = (fallback: number, min: number, max: number) =>
 const RawConfigSchema = z.object({
   CONVERTX_BASE_URL: z
     .string()
-    .url("CONVERTX_BASE_URL must be an absolute URL, e.g. http://192.168.1.50:3000"),
+    .url("CONVERTX_BASE_URL must be an absolute URL, e.g. http://192.168.1.50:2310"),
   CONVERTX_WEBROOT: z
     .string()
     .optional()
@@ -40,7 +40,7 @@ const RawConfigSchema = z.object({
     ),
   MCP_TRANSPORT: z.enum(["stdio", "http"]).default("stdio"),
   MCP_HTTP_HOST: z.string().default("127.0.0.1"),
-  MCP_HTTP_PORT: integer(8080, 1, 65_535),
+  MCP_HTTP_PORT: integer(2300, 1, 65_535),
 });
 
 export interface Credentials {

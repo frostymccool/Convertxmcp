@@ -4,9 +4,12 @@
 # tmpfs so nothing survives the run.
 #
 #   docker compose -f docker-compose.test.yml up -d --wait
-#   CONVERTX_IT_BASE_URL=http://127.0.0.1:3000 \
+#   CONVERTX_IT_BASE_URL=http://127.0.0.1:2311 \
 #   CONVERTX_IT_UNAUTHENTICATED=true npm run test:integration
 #   docker compose -f docker-compose.test.yml down -v
+#
+# Published on 2311, deliberately NOT the 2310 used by the production stack, so
+# the suite can run while the real deployment is up without colliding with it.
 
 services:
   convertx:
@@ -16,7 +19,7 @@ services:
       HTTP_ALLOWED: "true"
       JWT_SECRET: integration-test-only-not-a-real-secret
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:2311:3000"
     tmpfs:
       - /app/data
     healthcheck:

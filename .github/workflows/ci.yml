@@ -50,7 +50,7 @@ jobs:
 
       - name: Run integration suite
         env:
-          CONVERTX_IT_BASE_URL: http://127.0.0.1:3000
+          CONVERTX_IT_BASE_URL: http://127.0.0.1:2311
           CONVERTX_IT_UNAUTHENTICATED: "true"
         run: npm run test:integration
 

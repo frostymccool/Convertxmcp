@@ -24,8 +24,11 @@ services:
     volumes:
       - convertx-data:/app/data
     ports:
-      # Bound to localhost: only the MCP server needs to reach ConvertX directly.
-      - "127.0.0.1:3000:3000"
+      # Host 2310 -> container 3000. Chosen to stay clear of anything already on
+      # this VM. Bound to localhost because only the MCP server (which reaches it
+      # container-to-container) needs it; expose it briefly during first-run
+      # account setup, see README.
+      - "127.0.0.1:2310:3000"
 
   convertx-mcp:
     build: .
@@ -43,7 +46,7 @@ services:
       CONVERTX_CONVERT_TIMEOUT_MS: "600000"
       MCP_TRANSPORT: http
       MCP_HTTP_HOST: 0.0.0.0
-      MCP_HTTP_PORT: "8080"
+      MCP_HTTP_PORT: "2300"
     volumes:
       - ./data/input:/data/input:ro
       - ./data/output:/data/output
@@ -52,7 +55,7 @@ services:
     ports:
       # Reachable from the rest of the house. This server has no auth of its
       # own — keep it on the LAN, behind the firewall.
-      - "8080:8080"
+      - "2300:2300"
 
 secrets:
   convertx_password:

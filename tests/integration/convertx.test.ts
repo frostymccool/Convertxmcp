@@ -5,8 +5,8 @@
  * the fake is faithful. It is skipped unless CONVERTX_IT_BASE_URL points at a
  * live instance, so `npm test` stays fast and hermetic.
  *
- *   docker compose -f docker-compose.test.yml up -d
- *   CONVERTX_IT_BASE_URL=http://127.0.0.1:3000 \
+ *   docker compose -f docker-compose.test.yml up -d --wait
+ *   CONVERTX_IT_BASE_URL=http://127.0.0.1:2311 \
  *   CONVERTX_IT_UNAUTHENTICATED=true \
  *   npm run test:integration
  *
