@@ -65,10 +65,36 @@ than resizing first.
 
 ## Step 1 — Get the code
 
+Every command in this guide runs **on the VM**. You do not need an agent, an
+editor, or a toolchain installed there — only Docker and this repository, which
+is about 1.1 MB against the ~3.6 GB the ConvertX image itself occupies.
+
 ```bash
 git clone https://github.com/frostymccool/Convertxmcp.git
 cd Convertxmcp
 ```
+
+> **Driving this from another machine over SSH?** That is the expected setup —
+> keep your tooling on your workstation and give the VM only this repo. Wrap each
+> step as:
+>
+> ```bash
+> ssh you@vm 'cd ~/Convertxmcp && <command>'
+> ```
+>
+> Three things to get right in that mode:
+>
+> - **Run the preflight remotely too.** `ssh you@vm 'docker info'` — checking your
+>   workstation's Docker proves nothing about the VM.
+> - **Don't use a remote Docker context** (`docker context create --docker
+>   ssh://…`) for this stack. Compose resolves bind mounts like `./data/output`
+>   against the *daemon's* filesystem, not yours, so `./data` and
+>   `./secrets/convertx_password` must exist on the VM anyway. Cloning the repo
+>   there is simpler and has fewer surprises.
+> - **Step 3 still needs a browser**, pointed at the VM. Either expose 2310
+>   briefly as shown, or tunnel it and keep it closed:
+>   `ssh -L 2310:127.0.0.1:2310 you@vm`, then browse `http://127.0.0.1:2310`.
+>   The tunnel is the safer option and skips both `sed` port edits in Step 3.
 
 ## Step 2 — Create directories and secrets
 
