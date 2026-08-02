@@ -91,10 +91,8 @@ cd Convertxmcp
 >   against the *daemon's* filesystem, not yours, so `./data` and
 >   `./secrets/convertx_password` must exist on the VM anyway. Cloning the repo
 >   there is simpler and has fewer surprises.
-> - **Step 3 still needs a browser**, pointed at the VM. Either expose 2310
->   briefly as shown, or tunnel it and keep it closed:
->   `ssh -L 2310:127.0.0.1:2310 you@vm`, then browse `http://127.0.0.1:2310`.
->   The tunnel is the safer option and skips both `sed` port edits in Step 3.
+> - **Step 3 needs a browser** pointed at the VM. Step 3 uses an SSH tunnel for
+>   this, so ConvertX never leaves localhost and no port has to be opened.
 
 ## Step 2 — Create directories and secrets
 
@@ -132,38 +130,51 @@ sudo chown -R 1000:1000 data
 
 ## Step 3 — Start ConvertX and create its account
 
-ConvertX needs exactly one account, created once through its web UI. Account
-registration is disabled by default, so this is a deliberate three-part dance.
+ConvertX needs exactly one account, created once through its web UI. Registration
+is disabled by default, so this is a deliberate open-then-close sequence.
 **Do these in order.**
 
-```bash
-# 3.1  Temporarily allow registration
-sed -i 's/ACCOUNT_REGISTRATION: "false"/ACCOUNT_REGISTRATION: "true"/' docker-compose.yml
+ConvertX stays bound to `127.0.0.1` throughout — the browser reaches it through
+an SSH tunnel, so no port is ever opened on the VM.
 
-# 3.2  Start ONLY ConvertX, and temporarily expose it beyond localhost so you
-#      can reach the UI from your laptop. (Skip the sed if you are browsing
-#      from the VM itself, or are tunnelling with `ssh -L 2310:127.0.0.1:2310`.)
-sed -i 's/"127.0.0.1:2310:3000"/"2310:3000"/' docker-compose.yml
+**3.1 — on the VM**, open registration and start ConvertX:
+
+```bash
+sed -i 's/ACCOUNT_REGISTRATION: "false"/ACCOUNT_REGISTRATION: "true"/' docker-compose.yml
 docker compose up -d convertx
 
-# 3.3  Wait for it to be ready (first pull is ~1.55 GB, be patient)
+# Wait for it to be ready (first pull is ~1.55 GB, be patient)
 until curl -fsS http://127.0.0.1:2310/healthcheck >/dev/null 2>&1; do sleep 3; done
 echo "ConvertX is up"
 ```
 
-Now, **in a browser**, go to `http://<vm-ip>:2310` and register an account using
-**exactly** the email from `.env` and the password from
-`secrets/convertx_password`. A mismatch here is the single most common cause of
-a failed install, and it surfaces later as an authentication error.
-
-Then close it back up:
+**3.2 — on your workstation**, open the tunnel in a second terminal and leave it
+running:
 
 ```bash
-# 3.4  Disable registration and re-bind ConvertX to localhost
+ssh -L 2310:127.0.0.1:2310 you@vm
+```
+
+**3.3 — in a browser**, go to **`http://127.0.0.1:2310`** (your own machine — the
+tunnel forwards it) and register an account using **exactly** the email from
+`.env` and the password from `secrets/convertx_password`.
+
+> A mismatch here is the single most common cause of a failed install, and it
+> does not fail now — it surfaces much later as an authentication error. Copy
+> both values rather than retyping them:
+> `ssh you@vm 'cd ~/Convertxmcp && grep CONVERTX_EMAIL .env && cat secrets/convertx_password; echo'`
+
+**3.4 — on the VM**, close registration again. You can drop the tunnel now.
+
+```bash
 sed -i 's/ACCOUNT_REGISTRATION: "true"/ACCOUNT_REGISTRATION: "false"/' docker-compose.yml
-sed -i 's/"2310:3000"/"127.0.0.1:2310:3000"/' docker-compose.yml
 docker compose up -d convertx
 ```
+
+> Browsing from the VM itself instead? Skip 3.2, and use `http://127.0.0.1:2310`
+> from a browser there. Only if you have neither option should you publish the
+> port — `sed -i 's/"127.0.0.1:2310:3000"/"2310:3000"/' docker-compose.yml`,
+> reversing it before Step 4.
 
 ## Step 4 — Start the MCP server
 
